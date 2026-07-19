@@ -30,8 +30,8 @@ export interface StockIssue { id: string; number: string; date: string; branchId
 export interface ProductBarterIncomingItem { productId: string; quantity: number; }
 export interface ProductBarter { id: string; number: string; date: string; branchId: string; customerName: string; mode?: "single" | "multi"; primaryProductId: string; primaryQuantity: number; outgoingItems?: ProductBarterIncomingItem[]; exchangeProductId: string; exchangeQuantity: number; incomingItems?: ProductBarterIncomingItem[]; exchangeDirection?: "in" | "out"; ratioBase: number; ratioExchange: number; notes: string; status: "posted" | "cancelled"; }
 export interface ProductPackageItem { productId: string; quantity: number; }
-export interface ProductPackage { id: string; code: string; nameAr: string; nameEn: string; items: ProductPackageItem[]; returnProductId: string; returnQuantity: number; status: Status; createdAt: string; }
-export interface PackageIssue { id: string; number: string; date: string; branchId: string; packageId: string; packageQuantity: number; items: ProductPackageItem[]; returnProductId: string; returnQuantity: number; status: "posted" | "cancelled"; }
+export interface ProductPackage { id: string; code: string; nameAr: string; nameEn: string; imageUrl?: string; items: ProductPackageItem[]; returnProductId: string; returnQuantity: number; status: Status; createdAt: string; }
+export interface PackageIssue { id: string; number: string; date: string; branchId: string; packageId: string; packageQuantity: number; customerName?: string; customerPhone?: string; items: ProductPackageItem[]; returnProductId: string; returnQuantity: number; status: "posted" | "cancelled"; }
 export interface User { id: string; name: string; email: string; role: string; branchId: string; status: Status; }
 export interface Notification { id: string; titleAr: string; titleEn: string; date: string; read: boolean; }
 export interface ApiResponse<T> { success: boolean; data: T; message?: string; }

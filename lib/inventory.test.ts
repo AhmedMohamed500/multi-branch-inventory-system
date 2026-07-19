@@ -29,4 +29,10 @@ describe("package inventory posting",()=>{
     const stock=(id:string)=>result.find(x=>x.productId===id)?.currentQuantity;
     expect(stock("oil")).toBe(98);expect(stock("tea")).toBe(99);expect(stock("pasta")).toBe(99);expect(stock("flour")).toBe(99);expect(stock("used-oil")).toBe(106);
   });
+  it("deducts the branch and therefore the company total",()=>{
+    const alex:InventoryBalance[]=productIds.map(productId=>({id:`alex-${productId}`,branchId:"alex",productId,currentQuantity:50,reservedQuantity:0,availableQuantity:50,minimumQuantity:10,maximumQuantity:500,averageCost:1,inventoryValue:50,lastMovementDate:"2026-07-18",status:"available"}));
+    const result=postPackageInventory([...inventory,...alex],"cairo",khairElBeit,1,"2026-07-19");
+    const companyStock=(id:string)=>result.filter(x=>x.productId===id).reduce((sum,x)=>sum+x.currentQuantity,0);
+    expect(companyStock("oil")).toBe(148);expect(companyStock("tea")).toBe(149);expect(companyStock("pasta")).toBe(149);expect(companyStock("flour")).toBe(149);expect(companyStock("used-oil")).toBe(156);
+  });
 });
