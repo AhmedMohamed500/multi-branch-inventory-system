@@ -16,6 +16,9 @@ img, svg { max-width: 100%; }
 .input { @apply w-full rounded-xl border border-slate-200 bg-white px-3.5 py-2.5 outline-none transition focus:border-brand-500 focus:ring-2 focus:ring-brand-500/20 dark:border-slate-700 dark:bg-slate-900; }
 .badge { @apply inline-flex rounded-full px-2.5 py-1 text-xs font-semibold; }
 .table-scroll { -webkit-overflow-scrolling: touch; overscroll-behavior-inline: contain; }
+.print-only { display: none; }
+.report-chart .recharts-cartesian-axis-tick-value { fill: #64748b; }
+.report-chart .recharts-legend-item-text { color: #475569 !important; font-weight: 700; }
 
 @media (max-width: 480px) {
   .mobile-theme { display: none !important; }
@@ -37,4 +40,28 @@ img, svg { max-width: 100%; }
     padding: 0;
   }
 }
-@media print { aside, header, .no-print { display: none !important; } main { margin: 0 !important; padding: 0 !important; } }
+@media print {
+  @page { size: A4 landscape; margin: 10mm; }
+  html, body { width: 100% !important; overflow: visible !important; background: #fff !important; color: #0f172a !important; print-color-adjust: exact; -webkit-print-color-adjust: exact; }
+  aside, header, .no-print, .report-controls { display: none !important; }
+  main { margin: 0 !important; padding: 0 !important; width: 100% !important; overflow: visible !important; }
+  .print-only { display: block !important; }
+  .report-print { display: block !important; }
+  .report-print-header { margin-bottom: 7mm; padding-bottom: 4mm; border-bottom: 3px solid #0f766e; }
+  .report-print-header h1 { margin: 0 0 2mm; font-size: 22pt; color: #0f172a; }
+  .report-print-header p { margin: 0; color: #475569; font-size: 10pt; }
+  .report-print .card { border: 1px solid #cbd5e1 !important; border-radius: 8px !important; box-shadow: none !important; background: #fff !important; color: #0f172a !important; break-inside: avoid; }
+  .report-summary { display: grid !important; grid-template-columns: repeat(4, 1fr) !important; gap: 4mm !important; }
+  .report-summary .card { padding: 4mm !important; }
+  .report-summary strong { font-size: 16pt !important; }
+  .report-chart-grid { display: grid !important; grid-template-columns: 2fr 1fr !important; gap: 5mm !important; margin-top: 5mm !important; }
+  .report-chart-card, .report-top-products { padding: 4mm !important; }
+  .report-chart { height: 72mm !important; padding: 0 !important; background: #fff !important; }
+  .report-table { margin-top: 7mm !important; break-before: page; overflow: visible !important; }
+  .report-table .table-scroll { overflow: visible !important; }
+  .report-table table { min-width: 0 !important; width: 100% !important; font-size: 8pt !important; }
+  .report-table thead { display: table-header-group; background: #e2e8f0 !important; }
+  .report-table tr { break-inside: avoid; }
+  .report-table th, .report-table td { padding: 2.2mm 2.5mm !important; color: #0f172a !important; border-bottom: 1px solid #e2e8f0; }
+  .report-table .badge { border: 1px solid #cbd5e1; }
+}
