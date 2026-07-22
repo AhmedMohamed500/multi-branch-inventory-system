@@ -1,4 +1,4 @@
-import type {InventoryBalance,ProductPackage,StockStatus} from "@/types";
+import type {InventoryBalance,ProductPackage,ProductPackageItem,StockStatus} from "@/types";
 
 export function availableQuantity(current: number, reserved: number) {
   return current - reserved;
@@ -21,9 +21,13 @@ export function validateTransfer(fromBranchId: string, toBranchId: string, quant
 }
 
 export function postPackageInventory(inventory:InventoryBalance[],branchId:string,pkg:ProductPackage,packageQuantity:number,date:string){
+  return applyPackageIssueInventory(inventory,branchId,pkg.items.map(item=>({...item,quantity:item.quantity*packageQuantity})),pkg.returnProductId,pkg.returnQuantity*packageQuantity,date,1);
+}
+
+export function applyPackageIssueInventory(inventory:InventoryBalance[],branchId:string,items:ProductPackageItem[],returnProductId:string,returnQuantity:number,date:string,direction:1|-1=1){
   const deltas=new Map<string,number>();
-  pkg.items.forEach(item=>deltas.set(item.productId,(deltas.get(item.productId)??0)-(item.quantity*packageQuantity)));
-  deltas.set(pkg.returnProductId,(deltas.get(pkg.returnProductId)??0)+(pkg.returnQuantity*packageQuantity));
+  items.forEach(item=>deltas.set(item.productId,(deltas.get(item.productId)??0)-(item.quantity*direction)));
+  deltas.set(returnProductId,(deltas.get(returnProductId)??0)+(returnQuantity*direction));
   return inventory.map(balance=>{
     if(balance.branchId!==branchId||!deltas.has(balance.productId))return balance;
     const current=balance.currentQuantity+(deltas.get(balance.productId)??0);const available=current-balance.reservedQuantity;

@@ -1,6 +1,6 @@
 import {describe,expect,it} from "vitest";
 import type {InventoryBalance,ProductPackage} from "@/types";
-import {availableQuantity,getStockStatus,inventoryValue,postPackageInventory,validateTransfer} from "./inventory";
+import {applyPackageIssueInventory,availableQuantity,getStockStatus,inventoryValue,postPackageInventory,validateTransfer} from "./inventory";
 
 describe("inventory calculations",()=>{
   it("calculates available quantity",()=>expect(availableQuantity(500,35)).toBe(465));
@@ -34,5 +34,11 @@ describe("package inventory posting",()=>{
     const result=postPackageInventory([...inventory,...alex],"cairo",khairElBeit,1,"2026-07-19");
     const companyStock=(id:string)=>result.filter(x=>x.productId===id).reduce((sum,x)=>sum+x.currentQuantity,0);
     expect(companyStock("oil")).toBe(148);expect(companyStock("tea")).toBe(149);expect(companyStock("pasta")).toBe(149);expect(companyStock("flour")).toBe(149);expect(companyStock("used-oil")).toBe(156);
+  });
+  it("reverses an issued package before editing or cancelling it",()=>{
+    const posted=postPackageInventory(inventory,"cairo",khairElBeit,1,"2026-07-19");
+    const reversed=applyPackageIssueInventory(posted,"cairo",[{productId:"oil",quantity:2},{productId:"tea",quantity:1},{productId:"pasta",quantity:1},{productId:"flour",quantity:1}],"used-oil",6,"2026-07-20",-1);
+    const stock=(id:string)=>reversed.find(x=>x.productId===id)?.currentQuantity;
+    expect(stock("oil")).toBe(100);expect(stock("tea")).toBe(100);expect(stock("pasta")).toBe(100);expect(stock("flour")).toBe(100);expect(stock("used-oil")).toBe(100);
   });
 });
