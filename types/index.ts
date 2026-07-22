@@ -32,6 +32,8 @@ export interface ProductBarter { id: string; number: string; date: string; branc
 export interface ProductPackageItem { productId: string; quantity: number; }
 export interface ProductPackage { id: string; code: string; nameAr: string; nameEn: string; imageUrl?: string; items: ProductPackageItem[]; returnProductId: string; returnQuantity: number; status: Status; createdAt: string; }
 export interface PackageIssue { id: string; number: string; date: string; branchId: string; packageId: string; packageQuantity: number; customerName?: string; customerPhone?: string; items: ProductPackageItem[]; returnProductId: string; returnQuantity: number; status: "posted" | "cancelled"; }
+export interface RepresentativeCustodyLine { kind: "product" | "package"; itemId: string; quantity: number; returnedQuantity?: number; issuedQuantity?: number; }
+export interface RepresentativeCustody { id: string; number: string; date: string; settlementDate?: string; branchId: string; representativeName: string; lines: RepresentativeCustodyLine[]; status: "open" | "settled" | "cancelled"; notes?: string; }
 export interface User { id: string; name: string; email: string; role: string; branchId: string; status: Status; }
 export interface Notification { id: string; titleAr: string; titleEn: string; date: string; read: boolean; }
 export interface ApiResponse<T> { success: boolean; data: T; message?: string; }
