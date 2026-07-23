@@ -42,7 +42,7 @@ export default function InventoryApp({locale,section}:{locale:Locale;section:str
   useEffect(()=>{void load()},[]);// eslint-disable-line react-hooks/exhaustive-deps
   useEffect(()=>{dataRef.current=data},[data]);
   useEffect(()=>{if(!loading&&data.branches.length){localStorage.setItem("inventory-demo-data",JSON.stringify(data));saveSharedDemoData(data)}},[data,loading]);
-  useEffect(()=>{if(loading)return;let active=true;async function tick(){const shared=await loadSharedDemoState();if(!active)return;setSyncOnline(Boolean(shared?.enabled));if(shared?.enabled&&shared.data&&!sameDemoData(shared.data,dataRef.current))setData(shared.data)}void tick();const timer=window.setInterval(()=>{void tick()},3000);return()=>{active=false;window.clearInterval(timer)}},[loading]);
+  useEffect(()=>{if(loading)return;let active=true;async function tick(){const shared=await loadSharedDemoState();if(!active)return;setSyncOnline(Boolean(shared?.enabled));if(shared?.enabled&&shared.data&&!sameDemoData(shared.data,dataRef.current))setData(shared.data)}void tick();const timer=window.setInterval(()=>{void tick()},1000);return()=>{active=false;window.clearInterval(timer)}},[loading]);
   useEffect(()=>{const saved=localStorage.getItem("theme")==="dark";setDark(saved);document.documentElement.classList.toggle("dark",saved);document.documentElement.lang=locale;document.documentElement.dir=locale==="ar"?"rtl":"ltr"},[locale]);
   function toggleTheme(){const next=!dark;setDark(next);localStorage.setItem("theme",next?"dark":"light");document.documentElement.classList.toggle("dark",next)}
   function switchLanguage(){const next=locale==="ar"?"en":"ar";localStorage.setItem("locale",next);router.push(`/${next}/app/${section}`)}
