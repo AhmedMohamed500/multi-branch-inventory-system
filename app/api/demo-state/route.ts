@@ -2,6 +2,14 @@ import {NextResponse} from "next/server";
 
 const KEY = "inventory-demo-state";
 
+type DemoGlobal = typeof globalThis & {
+  __inventoryDemoState?: unknown;
+};
+
+function memoryStore() {
+  return globalThis as DemoGlobal;
+}
+
 function redisConfig() {
   const url = process.env.KV_REST_API_URL ?? process.env.UPSTASH_REDIS_REST_URL;
   const token = process.env.KV_REST_API_TOKEN ?? process.env.UPSTASH_REDIS_REST_TOKEN;
@@ -23,14 +31,22 @@ async function command(args: unknown[]) {
 
 export async function GET() {
   const result = await command(["GET", KEY]);
-  if (!result) return NextResponse.json({enabled: false, data: null}, {status: 200});
+  if (!result) {
+    return NextResponse.json(
+      {enabled: true, storage: "memory", data: memoryStore().__inventoryDemoState ?? null},
+      {status: 200}
+    );
+  }
   const value = typeof result.result === "string" ? JSON.parse(result.result) : null;
-  return NextResponse.json({enabled: true, data: value});
+  return NextResponse.json({enabled: true, storage: "redis", data: value});
 }
 
 export async function POST(request: Request) {
   const body = await request.json();
   const result = await command(["SET", KEY, JSON.stringify(body)]);
-  if (!result) return NextResponse.json({enabled: false}, {status: 200});
-  return NextResponse.json({enabled: true});
+  if (!result) {
+    memoryStore().__inventoryDemoState = body;
+    return NextResponse.json({enabled: true, storage: "memory"}, {status: 200});
+  }
+  return NextResponse.json({enabled: true, storage: "redis"});
 }
