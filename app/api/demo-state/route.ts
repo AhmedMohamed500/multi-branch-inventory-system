@@ -1,6 +1,7 @@
 import {NextResponse} from "next/server";
 
 const KEY = "inventory-demo-state";
+const MOJIBAKE_MARKER = /[ÃÂØÙ][\u0080-\u00ff]/;
 
 type DemoGlobal = typeof globalThis & {
   __inventoryDemoState?: unknown;
@@ -24,6 +25,25 @@ function redisConfig() {
     process.env.STORAGE_UPSTASH_REDIS_REST_TOKEN ??
     process.env.STORAGE_REST_API_TOKEN;
   return url && token ? {url, token} : null;
+}
+
+function repairText(value: string) {
+  let fixed = value;
+  for (let index = 0; index < 3 && MOJIBAKE_MARKER.test(fixed); index++) {
+    const next = Buffer.from(fixed, "latin1").toString("utf8");
+    if (next === fixed) break;
+    fixed = next;
+  }
+  return fixed;
+}
+
+function repairMojibake(value: unknown): unknown {
+  if (typeof value === "string") return repairText(value);
+  if (Array.isArray(value)) return value.map(repairMojibake);
+  if (value && typeof value === "object") {
+    return Object.fromEntries(Object.entries(value).map(([key, item]) => [key, repairMojibake(item)]));
+  }
+  return value;
 }
 
 async function command(args: unknown[]) {
@@ -52,7 +72,7 @@ export async function GET() {
 }
 
 export async function POST(request: Request) {
-  const body = await request.json();
+  const body = repairMojibake(await request.json());
   const result = await command(["SET", KEY, JSON.stringify(body)]);
   if (!result) {
     memoryStore().__inventoryDemoState = body;
