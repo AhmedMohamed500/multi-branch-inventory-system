@@ -9,8 +9,14 @@ type DemoGlobal = typeof globalThis & {
   __inventoryDemoState?: unknown;
 };
 
+type StateRecord = Record<string, unknown>;
+
 function memoryStore() {
   return globalThis as DemoGlobal;
+}
+
+function isRecord(value: unknown): value is StateRecord {
+  return Boolean(value && typeof value === "object" && !Array.isArray(value));
 }
 
 function redisConfig() {
@@ -46,6 +52,45 @@ function repairMojibake(value: unknown): unknown {
     return Object.fromEntries(Object.entries(value).map(([key, item]) => [key, repairMojibake(item)]));
   }
   return value;
+}
+
+function itemKey(item: unknown, index: number) {
+  if (!isRecord(item)) return `row-${index}`;
+  if (typeof item.id === "string") return item.id;
+  if (typeof item.number === "string") return item.number;
+  if (typeof item.reference === "string") return item.reference;
+  if (typeof item.branchId === "string" && typeof item.productId === "string") return `${item.branchId}|${item.productId}`;
+  return `row-${index}`;
+}
+
+function mergeArray(remote: unknown, incoming: unknown) {
+  const map = new Map<string, unknown>();
+  if (Array.isArray(remote)) remote.forEach((item, index) => map.set(itemKey(item, index), item));
+  if (Array.isArray(incoming)) incoming.forEach((item, index) => map.set(itemKey(item, index), item));
+  return [...map.values()];
+}
+
+function mergeDemoState(remote: unknown, incoming: unknown) {
+  if (!isRecord(remote)) return incoming;
+  if (!isRecord(incoming)) return remote;
+  const merged: StateRecord = {...remote, ...incoming};
+  for (const key of [
+    "branches",
+    "users",
+    "products",
+    "inventory",
+    "movements",
+    "transfers",
+    "suppliers",
+    "stockIssues",
+    "barters",
+    "packages",
+    "packageIssues",
+    "custodies"
+  ]) {
+    merged[key] = mergeArray(remote[key], incoming[key]);
+  }
+  return merged;
 }
 
 async function command(args: unknown[]) {
@@ -129,10 +174,13 @@ export async function POST(request: Request) {
       return NextResponse.json({enabled: true, storage: "redis", restored: true, data});
     }
   }
-  const result = await command(["SET", KEY, JSON.stringify(body)]);
+  const currentResult = await command(["GET", KEY]);
+  const current = typeof currentResult?.result === "string" ? repairMojibake(JSON.parse(currentResult.result)) : null;
+  const next = mergeDemoState(current, body);
+  const result = await command(["SET", KEY, JSON.stringify(next)]);
   if (!result) {
-    memoryStore().__inventoryDemoState = body;
+    memoryStore().__inventoryDemoState = mergeDemoState(memoryStore().__inventoryDemoState, body);
     return NextResponse.json({enabled: true, storage: "memory"}, {status: 200});
   }
-  return NextResponse.json({enabled: true, storage: "redis"});
+  return NextResponse.json({enabled: true, storage: "redis", data: next});
 }
