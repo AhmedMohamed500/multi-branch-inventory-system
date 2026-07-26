@@ -10,6 +10,7 @@ type DemoGlobal = typeof globalThis & {
 };
 
 type StateRecord = Record<string, unknown>;
+type DeletedMap = Record<string, string[]>;
 
 function memoryStore() {
   return globalThis as DemoGlobal;
@@ -63,16 +64,41 @@ function itemKey(item: unknown, index: number) {
   return `row-${index}`;
 }
 
-function mergeArray(remote: unknown, incoming: unknown) {
+function readDeleted(state: unknown) {
+  const deleted = isRecord(state) && isRecord(state.deleted) ? state.deleted : {};
+  const result: DeletedMap = {};
+  for (const [key, value] of Object.entries(deleted)) {
+    if (Array.isArray(value)) result[key] = value.filter((item): item is string => typeof item === "string");
+  }
+  return result;
+}
+
+function mergeDeleted(remote: unknown, incoming: unknown) {
+  const result: DeletedMap = {};
+  for (const source of [readDeleted(remote), readDeleted(incoming)]) {
+    for (const [key, ids] of Object.entries(source)) result[key] = [...new Set([...(result[key] ?? []), ...ids])];
+  }
+  return result;
+}
+
+function isDeleted(key: string, item: unknown, deleted: DeletedMap) {
+  if (!isRecord(item)) return false;
+  const direct = typeof item.id === "string" && deleted[key]?.includes(item.id);
+  const byProduct = typeof item.productId === "string" && deleted.products?.includes(item.productId);
+  return Boolean(direct || byProduct);
+}
+
+function mergeArray(key: string, remote: unknown, incoming: unknown, deleted: DeletedMap) {
   const map = new Map<string, unknown>();
   if (Array.isArray(remote)) remote.forEach((item, index) => map.set(itemKey(item, index), item));
   if (Array.isArray(incoming)) incoming.forEach((item, index) => map.set(itemKey(item, index), item));
-  return [...map.values()];
+  return [...map.values()].filter(item => !isDeleted(key, item, deleted));
 }
 
 function mergeDemoState(remote: unknown, incoming: unknown) {
   if (!isRecord(remote)) return incoming;
   if (!isRecord(incoming)) return remote;
+  const deleted = mergeDeleted(remote, incoming);
   const merged: StateRecord = {...remote, ...incoming};
   for (const key of [
     "branches",
@@ -88,8 +114,9 @@ function mergeDemoState(remote: unknown, incoming: unknown) {
     "packageIssues",
     "custodies"
   ]) {
-    merged[key] = mergeArray(remote[key], incoming[key]);
+    merged[key] = mergeArray(key, remote[key], incoming[key], deleted);
   }
+  merged.deleted = deleted;
   return merged;
 }
 
