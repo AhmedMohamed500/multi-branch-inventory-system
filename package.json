@@ -3,7 +3,8 @@
   "version": "1.0.0",
   "private": true,
   "scripts": {
-    "dev": "next dev",
+    "dev": "start \"\" \"https://multi-branch-inventory-system.vercel.app\" && next dev",
+    "dev:local": "next dev",
     "build": "next build",
     "start": "next start",
     "lint": "eslint .",
